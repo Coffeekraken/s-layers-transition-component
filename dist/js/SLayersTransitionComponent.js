@@ -18,6 +18,12 @@ var _dispatchEvent = require('coffeekraken-sugar/js/dom/dispatchEvent');
 
 var _dispatchEvent2 = _interopRequireDefault(_dispatchEvent);
 
+var _debounce = require('coffeekraken-sugar/js/utils/functions/debounce');
+
+var _debounce2 = _interopRequireDefault(_debounce);
+
+require('javascript-detect-element-resize');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -57,22 +63,59 @@ var SLayersTransitionComponent = function (_SWebComponent) {
 
       _get(SLayersTransitionComponent.prototype.__proto__ || Object.getPrototypeOf(SLayersTransitionComponent.prototype), 'componentWillMount', this).call(this);
 
+      // flags
+      this._isTransitionIn = false;
+      this._isTransitionOut = false;
+
       // layers
       this._layers = [];
 
       // create a canvas to draw in
       this.$canvasElm = document.createElement('canvas');
-      var _ref = [this.offsetWidth, this.offsetHeight],
-          w = _ref[0],
-          h = _ref[1];
-
-      this.$canvasElm.width = w;
-      this.$canvasElm.height = h;
       this.appendChild(this.$canvasElm);
 
       // set the layers
       this.props.layers.forEach(function (layer) {
         _this2._addLayer(layer.color, layer.side);
+      });
+
+      // detect for resize
+      window.addResizeListener(this, (0, _debounce2.default)(function () {
+        // set points
+        _this2._setPointPositionAndCanvasSize();
+      }, 100));
+    }
+
+    /**
+     * Set points position and canvas size
+     */
+
+  }, {
+    key: '_setPointPositionAndCanvasSize',
+    value: function _setPointPositionAndCanvasSize() {
+      var _this3 = this;
+
+      var _ref = [this.offsetWidth, this.offsetHeight],
+          w = _ref[0],
+          h = _ref[1];
+      // set canvas size
+
+      this.$canvasElm.width = w;
+      this.$canvasElm.height = h;
+      // loop on each layers
+      this._layers.forEach(function (layer) {
+        if (_this3._isTransitionIn) {
+          layer.points[2] = { x: w, y: h };
+          layer.points[3] = { x: 0, y: h };
+        } else if (_this3._isTransitionOut) {
+          layer.points[0] = { x: 0, y: 0 };
+          layer.points[1] = { x: w, y: 0 };
+        } else {
+          layer.points[0] = { x: 0, y: h };
+          layer.points[1] = { x: w, y: h };
+          layer.points[2] = { x: w, y: h };
+          layer.points[3] = { x: 0, y: h };
+        }
       });
     }
 
@@ -85,14 +128,14 @@ var SLayersTransitionComponent = function (_SWebComponent) {
   }, {
     key: 'componentWillReceiveProp',
     value: function componentWillReceiveProp(name, newVal, oldVal) {
-      var _this3 = this;
+      var _this4 = this;
 
       switch (name) {
         case 'layers':
           this._layers = [];
           // set the layers
           this.props.layers.forEach(function (layer) {
-            _this3._addLayer(layer.color, layer.side);
+            _this4._addLayer(layer.color, layer.side);
           });
           break;
       }
@@ -130,87 +173,19 @@ var SLayersTransitionComponent = function (_SWebComponent) {
   }, {
     key: 'animateIn',
     value: function animateIn(_onComplete) {
-      var _this4 = this;
-
-      return new Promise(function (resolve, reject) {
-
-        // add the active class
-        _this4.classList.add('active');
-
-        setTimeout(function () {
-
-          var ctx = _this4.$canvasElm.getContext('2d');
-          var _ref3 = [_this4.offsetWidth, _this4.offsetHeight],
-              w = _ref3[0],
-              h = _ref3[1];
-
-          _this4.$canvasElm.width = w;
-          _this4.$canvasElm.height = h;
-          ctx.globalCompositeOperation = 'add';
-
-          var tl = new _gsap.TimelineMax({
-            onComplete: function onComplete() {
-              // callback
-              _onComplete && _onComplete(_this4);
-              // promise
-              resolve(_this4);
-              /**
-               * @event
-               * @name    in:complete
-               * Event dispatched when the transition in is completed
-               */
-              (0, _dispatchEvent2.default)(_this4, 'in:complete');
-            },
-            onUpdate: function onUpdate() {
-              ctx.clearRect(0, 0, w, h);
-
-              _this4._layers.forEach(function (layer, i) {
-                ctx.beginPath();
-                ctx.moveTo(layer.points[0].x, layer.points[0].y);
-                ctx.lineTo(layer.points[1].x, layer.points[1].y);
-                ctx.lineTo(layer.points[2].x, layer.points[2].y);
-                ctx.lineTo(layer.points[3].x, layer.points[3].y);
-                ctx.closePath();
-                ctx.fillStyle = layer.color;
-                ctx.fill();
-              });
-            }
-          });
-
-          var d = _this4.props.duration;
-
-          _this4._layers.forEach(function (layer, i) {
-            if (layer.side === 'left') {
-              tl.insert(new _gsap.TweenMax(layer.points[0], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
-              tl.insert(new _gsap.TweenMax(layer.points[1], d + _this4.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
-            } else {
-              tl.insert(new _gsap.TweenMax(layer.points[1], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
-              tl.insert(new _gsap.TweenMax(layer.points[0], d + _this4.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
-            }
-          });
-        });
-      });
-    }
-
-    /**
-     * Animate the transition out
-     * @param    {Function}    onComplete    A callback when the transition is finished
-     * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
-     */
-
-  }, {
-    key: 'animateOut',
-    value: function animateOut(_onComplete2) {
       var _this5 = this;
 
       return new Promise(function (resolve, reject) {
+        // add the active class
+        _this5.classList.add('active');
+        // flag
+        _this5._isTransitionIn = true;
 
         setTimeout(function () {
-          // avoid flickering
           var ctx = _this5.$canvasElm.getContext('2d');
-          var _ref4 = [_this5.offsetWidth, _this5.offsetHeight],
-              w = _ref4[0],
-              h = _ref4[1];
+          var _ref3 = [_this5.offsetWidth, _this5.offsetHeight],
+              w = _ref3[0],
+              h = _ref3[1];
 
           _this5.$canvasElm.width = w;
           _this5.$canvasElm.height = h;
@@ -218,27 +193,23 @@ var SLayersTransitionComponent = function (_SWebComponent) {
 
           var tl = new _gsap.TimelineMax({
             onComplete: function onComplete() {
-              // remove the active class
-              _this5.classList.remove('active');
-              // reset points
-              _this5._layers.forEach(function (layer) {
-                layer.points = [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }];
-              });
+              // flag
+              _this5._isTransitionIn = false;
               // callback
-              _onComplete2 && _onComplete2(_this5);
+              _onComplete && _onComplete(_this5);
               // promise
               resolve(_this5);
               /**
-              * @event
-              * @name    out:complete
-              * Event dispatched when the transition out is completed
-              */
-              (0, _dispatchEvent2.default)(_this5, 'out:complete');
+               * @event
+               * @name    in:complete
+               * Event dispatched when the transition in is completed
+               */
+              (0, _dispatchEvent2.default)(_this5, 'in:complete');
             },
             onUpdate: function onUpdate() {
               ctx.clearRect(0, 0, w, h);
 
-              _this5._layers.forEach(function (layer) {
+              _this5._layers.forEach(function (layer, i) {
                 ctx.beginPath();
                 ctx.moveTo(layer.points[0].x, layer.points[0].y);
                 ctx.lineTo(layer.points[1].x, layer.points[1].y);
@@ -255,11 +226,89 @@ var SLayersTransitionComponent = function (_SWebComponent) {
 
           _this5._layers.forEach(function (layer, i) {
             if (layer.side === 'left') {
-              tl.insert(new _gsap.TweenMax(layer.points[2], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
-              tl.insert(new _gsap.TweenMax(layer.points[3], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[0], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[1], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * i);
             } else {
-              tl.insert(new _gsap.TweenMax(layer.points[2], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
-              tl.insert(new _gsap.TweenMax(layer.points[3], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[1], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[0], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * i);
+            }
+          });
+        });
+      });
+    }
+
+    /**
+     * Animate the transition out
+     * @param    {Function}    onComplete    A callback when the transition is finished
+     * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+     */
+
+  }, {
+    key: 'animateOut',
+    value: function animateOut(_onComplete2) {
+      var _this6 = this;
+
+      return new Promise(function (resolve, reject) {
+        // flag
+        _this6._isTransitionOut = true;
+
+        setTimeout(function () {
+          // avoid flickering
+          var ctx = _this6.$canvasElm.getContext('2d');
+          var _ref4 = [_this6.offsetWidth, _this6.offsetHeight],
+              w = _ref4[0],
+              h = _ref4[1];
+
+          _this6.$canvasElm.width = w;
+          _this6.$canvasElm.height = h;
+          ctx.globalCompositeOperation = 'add';
+
+          var tl = new _gsap.TimelineMax({
+            onComplete: function onComplete() {
+              // flag
+              _this6._isTransitionOut = false;
+              // remove the active class
+              _this6.classList.remove('active');
+              // reset points
+              _this6._layers.forEach(function (layer) {
+                layer.points = [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }];
+              });
+              // callback
+              _onComplete2 && _onComplete2(_this6);
+              // promise
+              resolve(_this6);
+              /**
+              * @event
+              * @name    out:complete
+              * Event dispatched when the transition out is completed
+              */
+              (0, _dispatchEvent2.default)(_this6, 'out:complete');
+            },
+            onUpdate: function onUpdate() {
+              ctx.clearRect(0, 0, w, h);
+
+              _this6._layers.forEach(function (layer) {
+                ctx.beginPath();
+                ctx.moveTo(layer.points[0].x, layer.points[0].y);
+                ctx.lineTo(layer.points[1].x, layer.points[1].y);
+                ctx.lineTo(layer.points[2].x, layer.points[2].y);
+                ctx.lineTo(layer.points[3].x, layer.points[3].y);
+                ctx.closePath();
+                ctx.fillStyle = layer.color;
+                ctx.fill();
+              });
+            }
+          });
+
+          var d = _this6.props.duration;
+
+          _this6._layers.forEach(function (layer, i) {
+            if (layer.side === 'left') {
+              tl.insert(new _gsap.TweenMax(layer.points[2], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this6.props.delay * (_this6._layers.length - 1) - _this6.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[3], d + _this6.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this6.props.delay * (_this6._layers.length - 1) - _this6.props.delay * i);
+            } else {
+              tl.insert(new _gsap.TweenMax(layer.points[2], d + _this6.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this6.props.delay * (_this6._layers.length - 1) - _this6.props.delay * i);
+              tl.insert(new _gsap.TweenMax(layer.points[3], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this6.props.delay * (_this6._layers.length - 1) - _this6.props.delay * i);
             }
           });
         });
