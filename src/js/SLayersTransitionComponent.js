@@ -70,11 +70,10 @@ export default class SLayersTransitionComponent extends SWebComponent {
   static defaultCss (componentName, componentNameDash) {
     return `
       ${componentNameDash} {
-        display: none;
+        display: block;
         pointer-events: none;
       }
       ${componentNameDash}.active {
-        display: block;
         pointer-events: all;
       }
     `
@@ -143,56 +142,58 @@ export default class SLayersTransitionComponent extends SWebComponent {
    * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
    */
   animateIn (onComplete) {
-    // add the active class
-    this.classList.add('active')
+    return new Promise((resolve, reject) => {
+      // add the active class
+      this.classList.add('active')
 
-    setTimeout(() => {
+      setTimeout(() => {
+        const ctx = this.$canvasElm.getContext('2d')
+        const [w, h] = [this.offsetWidth, this.offsetHeight]
+        this.$canvasElm.width = w
+        this.$canvasElm.height = h
+        ctx.globalCompositeOperation = 'add'
 
-      const ctx = this.$canvasElm.getContext('2d')
-      const [w, h] = [this.offsetWidth, this.offsetHeight]
-      this.$canvasElm.width = w
-      this.$canvasElm.height = h
-      ctx.globalCompositeOperation = 'add'
+        const tl = new TimelineMax({
+          onComplete: () => {
+            // callback
+            onComplete && onComplete(this)
+            // promise
+            resolve(this)
+            /**
+             * @event
+             * @name    in:complete
+             * Event dispatched when the transition in is completed
+             */
+            dispatchEvent(this, 'in:complete')
+          },
+          onUpdate: () => {
+            ctx.clearRect(0, 0, w, h)
 
-      const tl = new TimelineMax({
-        onComplete: () => {
-          // callback
-          onComplete && onComplete(this)
-          /**
-           * @event
-           * @name    in:complete
-           * Event dispatched when the transition in is completed
-           */
-          dispatchEvent(this, 'in:complete')
-        },
-        onUpdate: () => {
-          ctx.clearRect(0, 0, w, h)
+            this._layers.forEach((layer, i) => {
+              ctx.beginPath()
+              ctx.moveTo(layer.points[0].x, layer.points[0].y)
+              ctx.lineTo(layer.points[1].x, layer.points[1].y)
+              ctx.lineTo(layer.points[2].x, layer.points[2].y)
+              ctx.lineTo(layer.points[3].x, layer.points[3].y)
+              ctx.closePath()
+              ctx.fillStyle = layer.color
+              ctx.fill()
+            })
+          }
+        })
 
-          this._layers.forEach((layer, i) => {
-            ctx.beginPath()
-            ctx.moveTo(layer.points[0].x, layer.points[0].y)
-            ctx.lineTo(layer.points[1].x, layer.points[1].y)
-            ctx.lineTo(layer.points[2].x, layer.points[2].y)
-            ctx.lineTo(layer.points[3].x, layer.points[3].y)
-            ctx.closePath()
-            ctx.fillStyle = layer.color
-            ctx.fill()
-          })
-        }
+        const d = this.props.duration
+
+        this._layers.forEach((layer, i) => {
+          if (layer.side === 'left') {
+            tl.insert(new TweenMax(layer.points[0], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
+            tl.insert(new TweenMax(layer.points[1], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
+          } else {
+            tl.insert(new TweenMax(layer.points[1], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
+            tl.insert(new TweenMax(layer.points[0], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
+          }
+        })
       })
-
-      const d = this.props.duration
-
-      this._layers.forEach((layer, i) => {
-        if (layer.side === 'left') {
-          tl.insert(new TweenMax(layer.points[0], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
-          tl.insert(new TweenMax(layer.points[1], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
-        } else {
-          tl.insert(new TweenMax(layer.points[1], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
-          tl.insert(new TweenMax(layer.points[0], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * i)
-        }
-      })
-
     })
   }
 
@@ -202,56 +203,60 @@ export default class SLayersTransitionComponent extends SWebComponent {
    * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
    */
   animateOut (onComplete) {
-    setTimeout(() => { // avoid flickering
-      const ctx = this.$canvasElm.getContext('2d')
-      const [w, h] = [this.offsetWidth, this.offsetHeight]
-      this.$canvasElm.width = w
-      this.$canvasElm.height = h
-      ctx.globalCompositeOperation = 'add'
+    return new Promise((resolve, reject) => {
+      setTimeout(() => { // avoid flickering
+        const ctx = this.$canvasElm.getContext('2d')
+        const [w, h] = [this.offsetWidth, this.offsetHeight]
+        this.$canvasElm.width = w
+        this.$canvasElm.height = h
+        ctx.globalCompositeOperation = 'add'
 
-      const tl = new TimelineMax({
-        onComplete: () => {
-          // remove the active class
-          this.classList.remove('active')
-          // reset points
-          this._layers.forEach((layer) => {
-            layer.points = [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }]
-          })
-          // callback
-          onComplete && onComplete(this)
-          /**
-         * @event
-         * @name    out:complete
-         * Event dispatched when the transition out is completed
-         */
-          dispatchEvent(this, 'out:complete')
-        },
-        onUpdate: () => {
-          ctx.clearRect(0, 0, w, h)
+        const tl = new TimelineMax({
+          onComplete: () => {
+            // remove the active class
+            this.classList.remove('active')
+            // reset points
+            this._layers.forEach((layer) => {
+              layer.points = [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }]
+            })
+            // callback
+            onComplete && onComplete(this)
+            // promise
+            resolve(this)
+            /**
+           * @event
+           * @name    out:complete
+           * Event dispatched when the transition out is completed
+           */
+            dispatchEvent(this, 'out:complete')
+          },
+          onUpdate: () => {
+            ctx.clearRect(0, 0, w, h)
 
-          this._layers.forEach((layer) => {
-            ctx.beginPath()
-            ctx.moveTo(layer.points[0].x, layer.points[0].y)
-            ctx.lineTo(layer.points[1].x, layer.points[1].y)
-            ctx.lineTo(layer.points[2].x, layer.points[2].y)
-            ctx.lineTo(layer.points[3].x, layer.points[3].y)
-            ctx.closePath()
-            ctx.fillStyle = layer.color
-            ctx.fill()
-          })
-        }
-      })
+            this._layers.forEach((layer) => {
+              ctx.beginPath()
+              ctx.moveTo(layer.points[0].x, layer.points[0].y)
+              ctx.lineTo(layer.points[1].x, layer.points[1].y)
+              ctx.lineTo(layer.points[2].x, layer.points[2].y)
+              ctx.lineTo(layer.points[3].x, layer.points[3].y)
+              ctx.closePath()
+              ctx.fillStyle = layer.color
+              ctx.fill()
+            })
+          }
+        })
 
-      const d = this.props.duration
+        const d = this.props.duration
 
-      this._layers.forEach((layer, i) => {
-        if (layer.side === 'left') {
-          tl.insert(new TweenMax(layer.points[2], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
-          tl.insert(new TweenMax(layer.points[3], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
-        } else {
-          tl.insert(new TweenMax(layer.points[2], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
-          tl.insert(new TweenMax(layer.points[3], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
-        }
+        this._layers.forEach((layer, i) => {
+          if (layer.side === 'left') {
+            tl.insert(new TweenMax(layer.points[2], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
+            tl.insert(new TweenMax(layer.points[3], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
+          } else {
+            tl.insert(new TweenMax(layer.points[2], d + this.props.secondPointDelay, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
+            tl.insert(new TweenMax(layer.points[3], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
+          }
+        })
       })
     })
   }

@@ -1,6 +1,6 @@
 {
   "name": "coffeekraken-s-layers-transition-component",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create a nice layered transition for your webapp with fully customizable look and feel",
   "main": "dist/index.js",
   "homepage": "http://coffeekraken.io",
