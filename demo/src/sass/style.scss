@@ -1,0 +1,17 @@
+@import 'node_modules/coffeekraken-sugar/index';
+
+@include s-setup(());
+@include s-init();
+@include s-classes();
+
+s-layers-transition {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+	padding: s-space(bigger);
+}

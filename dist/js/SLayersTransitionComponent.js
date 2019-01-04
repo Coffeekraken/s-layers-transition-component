@@ -1,0 +1,328 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _SWebComponent2 = require('coffeekraken-sugar/js/core/SWebComponent');
+
+var _SWebComponent3 = _interopRequireDefault(_SWebComponent2);
+
+var _gsap = require('gsap');
+
+var _dispatchEvent = require('coffeekraken-sugar/js/dom/dispatchEvent');
+
+var _dispatchEvent2 = _interopRequireDefault(_dispatchEvent);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+/**
+ * Create a nice layered transition for your webapp with fully customizable look and feel.
+ * @example    html
+ * <s-layers-transition layers="[{color:'#ff0000',side:'left'},{color:'#00ff00',side:'right'}]"></s-layers-transition>
+ *
+ * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+ * @see    https://ddd.ge    Inspiration source
+ */
+var SLayersTransitionComponent = function (_SWebComponent) {
+  _inherits(SLayersTransitionComponent, _SWebComponent);
+
+  function SLayersTransitionComponent() {
+    _classCallCheck(this, SLayersTransitionComponent);
+
+    return _possibleConstructorReturn(this, (SLayersTransitionComponent.__proto__ || Object.getPrototypeOf(SLayersTransitionComponent)).apply(this, arguments));
+  }
+
+  _createClass(SLayersTransitionComponent, [{
+    key: 'componentWillMount',
+
+
+    /**
+     * Component will mount
+     * @definition    SWebComponent.componentWillMount
+     * @protected
+     */
+    value: function componentWillMount() {
+      var _this2 = this;
+
+      _get(SLayersTransitionComponent.prototype.__proto__ || Object.getPrototypeOf(SLayersTransitionComponent.prototype), 'componentWillMount', this).call(this);
+
+      // layers
+      this._layers = [];
+
+      // create a canvas to draw in
+      this.$canvasElm = document.createElement('canvas');
+      var _ref = [this.offsetWidth, this.offsetHeight],
+          w = _ref[0],
+          h = _ref[1];
+
+      this.$canvasElm.width = w;
+      this.$canvasElm.height = h;
+      this.appendChild(this.$canvasElm);
+
+      // set the layers
+      this.props.layers.forEach(function (layer) {
+        _this2._addLayer(layer.color, layer.side);
+      });
+    }
+
+    /**
+     * Component will receive prop
+     * @definition    SWebComponent.componentWillReceiveProp
+     * @protected
+     */
+
+  }, {
+    key: 'componentWillReceiveProp',
+    value: function componentWillReceiveProp(name, newVal, oldVal) {
+      var _this3 = this;
+
+      switch (name) {
+        case 'layers':
+          this._layers = [];
+          // set the layers
+          this.props.layers.forEach(function (layer) {
+            _this3._addLayer(layer.color, layer.side);
+          });
+          break;
+      }
+    }
+
+    /**
+     * Add a layer to be drawn
+     * @param    {String}    color    The color of the layer
+     * @param    {String}    side    The side of the layer. Can be `left` of `right`
+     * @private
+     * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+     */
+
+  }, {
+    key: '_addLayer',
+    value: function _addLayer(color) {
+      var side = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'left';
+      var _ref2 = [this.offsetWidth, this.offsetHeight],
+          w = _ref2[0],
+          h = _ref2[1];
+
+      this._layers.push({
+        color: color,
+        side: side,
+        points: [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }]
+      });
+    }
+
+    /**
+     * Animate the transition in
+     * @param    {Function}    onComplete    A callback when the transition is finished
+     * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+     */
+
+  }, {
+    key: 'animateIn',
+    value: function animateIn(_onComplete) {
+      var _this4 = this;
+
+      // add the active class
+      this.classList.add('active');
+
+      setTimeout(function () {
+
+        var ctx = _this4.$canvasElm.getContext('2d');
+        var _ref3 = [_this4.offsetWidth, _this4.offsetHeight],
+            w = _ref3[0],
+            h = _ref3[1];
+
+        _this4.$canvasElm.width = w;
+        _this4.$canvasElm.height = h;
+        ctx.globalCompositeOperation = 'add';
+
+        var tl = new _gsap.TimelineMax({
+          onComplete: function onComplete() {
+            // callback
+            _onComplete && _onComplete(_this4);
+            /**
+             * @event
+             * @name    in:complete
+             * Event dispatched when the transition in is completed
+             */
+            (0, _dispatchEvent2.default)(_this4, 'in:complete');
+          },
+          onUpdate: function onUpdate() {
+            ctx.clearRect(0, 0, w, h);
+
+            _this4._layers.forEach(function (layer, i) {
+              ctx.beginPath();
+              ctx.moveTo(layer.points[0].x, layer.points[0].y);
+              ctx.lineTo(layer.points[1].x, layer.points[1].y);
+              ctx.lineTo(layer.points[2].x, layer.points[2].y);
+              ctx.lineTo(layer.points[3].x, layer.points[3].y);
+              ctx.closePath();
+              ctx.fillStyle = layer.color;
+              ctx.fill();
+            });
+          }
+        });
+
+        var d = _this4.props.duration;
+
+        _this4._layers.forEach(function (layer, i) {
+          if (layer.side === 'left') {
+            tl.insert(new _gsap.TweenMax(layer.points[0], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
+            tl.insert(new _gsap.TweenMax(layer.points[1], d + _this4.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
+          } else {
+            tl.insert(new _gsap.TweenMax(layer.points[1], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
+            tl.insert(new _gsap.TweenMax(layer.points[0], d + _this4.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this4.props.delay * i);
+          }
+        });
+      });
+    }
+
+    /**
+     * Animate the transition out
+     * @param    {Function}    onComplete    A callback when the transition is finished
+     * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+     */
+
+  }, {
+    key: 'animateOut',
+    value: function animateOut(_onComplete2) {
+      var _this5 = this;
+
+      setTimeout(function () {
+        // avoid flickering
+        var ctx = _this5.$canvasElm.getContext('2d');
+        var _ref4 = [_this5.offsetWidth, _this5.offsetHeight],
+            w = _ref4[0],
+            h = _ref4[1];
+
+        _this5.$canvasElm.width = w;
+        _this5.$canvasElm.height = h;
+        ctx.globalCompositeOperation = 'add';
+
+        var tl = new _gsap.TimelineMax({
+          onComplete: function onComplete() {
+            // remove the active class
+            _this5.classList.remove('active');
+            // reset points
+            _this5._layers.forEach(function (layer) {
+              layer.points = [{ x: 0, y: h }, { x: w, y: h }, { x: w, y: h }, { x: 0, y: h }];
+            });
+            // callback
+            _onComplete2 && _onComplete2(_this5);
+            /**
+            * @event
+            * @name    out:complete
+            * Event dispatched when the transition out is completed
+            */
+            (0, _dispatchEvent2.default)(_this5, 'out:complete');
+          },
+          onUpdate: function onUpdate() {
+            ctx.clearRect(0, 0, w, h);
+
+            _this5._layers.forEach(function (layer) {
+              ctx.beginPath();
+              ctx.moveTo(layer.points[0].x, layer.points[0].y);
+              ctx.lineTo(layer.points[1].x, layer.points[1].y);
+              ctx.lineTo(layer.points[2].x, layer.points[2].y);
+              ctx.lineTo(layer.points[3].x, layer.points[3].y);
+              ctx.closePath();
+              ctx.fillStyle = layer.color;
+              ctx.fill();
+            });
+          }
+        });
+
+        var d = _this5.props.duration;
+
+        _this5._layers.forEach(function (layer, i) {
+          if (layer.side === 'left') {
+            tl.insert(new _gsap.TweenMax(layer.points[2], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+            tl.insert(new _gsap.TweenMax(layer.points[3], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+          } else {
+            tl.insert(new _gsap.TweenMax(layer.points[2], d + _this5.props.secondPointDelay, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+            tl.insert(new _gsap.TweenMax(layer.points[3], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this5.props.delay * (_this5._layers.length - 1) - _this5.props.delay * i);
+          }
+        });
+      });
+    }
+  }], [{
+    key: 'defaultCss',
+
+
+    /**
+     * Css
+     * @protected
+     */
+    value: function defaultCss(componentName, componentNameDash) {
+      return '\n      ' + componentNameDash + ' {\n        display: none;\n        pointer-events: none;\n      }\n      ' + componentNameDash + '.active {\n        display: block;\n        pointer-events: all;\n      }\n    ';
+    }
+  }, {
+    key: 'defaultProps',
+
+    /**
+     * Default props
+     * @definition    SWebComponent.defaultProps
+     * @protected
+     */
+    get: function get() {
+      return {
+
+        /**
+         * Specify the delay in second between each layers animations
+         * @prop
+         * @type    {Number}
+         */
+        delay: 0.2,
+
+        /**
+         * Specify the duration of 1 layer animation in second
+         * @prop
+         * @type    {Number}
+         */
+        duration: 0.6,
+
+        /**
+         * Specify the delay of the second point. This will create the slope in the animation
+         * @prop
+         * @type    {Number}
+         */
+        secondPointDelay: 0.15,
+
+        /**
+         * Set the layers. One layer in composed of:
+         * ```js
+         * {
+         *  color: '#ff0000',
+         *  side: 'left' // or right
+         * }
+         * ```
+         *
+         * @prop
+         * @type    {Array<Object>}
+         */
+        layers: [{
+          color: '#242c2f',
+          side: 'left'
+        }, {
+          color: '#f2bc2b',
+          side: 'right'
+        }]
+
+      };
+    }
+  }]);
+
+  return SLayersTransitionComponent;
+}(_SWebComponent3.default);
+
+exports.default = SLayersTransitionComponent;
