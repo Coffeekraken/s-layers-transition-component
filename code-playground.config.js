@@ -60,7 +60,7 @@ module.exports = {
       data: `
         import SLayersTransitionComponent from './dist/index'
         window.playTransition = function() {
-          document.querySelector('s-layers-transition').animateIn((elm) => {
+          document.querySelector('s-layers-transition').animateIn().then((elm) => {
             elm.animateOut()
           })
         }
