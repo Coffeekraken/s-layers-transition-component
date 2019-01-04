@@ -1,6 +1,8 @@
 import SWebComponent from 'coffeekraken-sugar/js/core/SWebComponent'
 import { TweenMax, TimelineMax, Expo } from 'gsap'
 import dispatchEvent from 'coffeekraken-sugar/js/dom/dispatchEvent'
+import debounce from 'coffeekraken-sugar/js/utils/functions/debounce'
+import 'javascript-detect-element-resize'
 
 /**
  * Create a nice layered transition for your webapp with fully customizable look and feel.
@@ -87,19 +89,51 @@ export default class SLayersTransitionComponent extends SWebComponent {
   componentWillMount () {
     super.componentWillMount()
 
+    // flags
+    this._isTransitionIn = false
+    this._isTransitionOut = false
+
     // layers
     this._layers = []
 
     // create a canvas to draw in
     this.$canvasElm = document.createElement('canvas')
-    const [w, h] = [this.offsetWidth, this.offsetHeight]
-    this.$canvasElm.width = w
-    this.$canvasElm.height = h
     this.appendChild(this.$canvasElm)
 
     // set the layers
     this.props.layers.forEach((layer) => {
       this._addLayer(layer.color, layer.side)
+    })
+
+    // detect for resize
+    window.addResizeListener(this, debounce(() => {
+      // set points
+      this._setPointPositionAndCanvasSize()
+    }, 100))
+  }
+
+  /**
+   * Set points position and canvas size
+   */
+  _setPointPositionAndCanvasSize () {
+    const [w, h] = [this.offsetWidth, this.offsetHeight]
+    // set canvas size
+    this.$canvasElm.width = w
+    this.$canvasElm.height = h
+    // loop on each layers
+    this._layers.forEach((layer) => {
+      if (this._isTransitionIn) {
+        layer.points[2] = { x: w, y: h }
+        layer.points[3] = { x: 0, y: h }
+      } else if (this._isTransitionOut) {
+        layer.points[0] = { x: 0, y: 0 }
+        layer.points[1] = { x: w, y: 0 }
+      } else {
+        layer.points[0] = { x: 0, y: h }
+        layer.points[1] = { x: w, y: h }
+        layer.points[2] = { x: w, y: h }
+        layer.points[3] = { x: 0, y: h }
+      }
     })
   }
 
@@ -145,6 +179,8 @@ export default class SLayersTransitionComponent extends SWebComponent {
     return new Promise((resolve, reject) => {
       // add the active class
       this.classList.add('active')
+      // flag
+      this._isTransitionIn = true
 
       setTimeout(() => {
         const ctx = this.$canvasElm.getContext('2d')
@@ -155,6 +191,8 @@ export default class SLayersTransitionComponent extends SWebComponent {
 
         const tl = new TimelineMax({
           onComplete: () => {
+            // flag
+            this._isTransitionIn = false
             // callback
             onComplete && onComplete(this)
             // promise
@@ -204,6 +242,9 @@ export default class SLayersTransitionComponent extends SWebComponent {
    */
   animateOut (onComplete) {
     return new Promise((resolve, reject) => {
+      // flag
+      this._isTransitionOut = true
+
       setTimeout(() => { // avoid flickering
         const ctx = this.$canvasElm.getContext('2d')
         const [w, h] = [this.offsetWidth, this.offsetHeight]
@@ -213,6 +254,8 @@ export default class SLayersTransitionComponent extends SWebComponent {
 
         const tl = new TimelineMax({
           onComplete: () => {
+            // flag
+            this._isTransitionOut = false
             // remove the active class
             this.classList.remove('active')
             // reset points
