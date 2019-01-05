@@ -1,6 +1,6 @@
 {
   "name": "coffeekraken-s-layers-transition-component",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Create a nice layered transition for your webapp with fully customizable look and feel",
   "main": "dist/index.js",
   "homepage": "http://coffeekraken.io",
@@ -73,8 +73,7 @@
   "dependencies": {
     "coffeekraken-s-button-component": "^1.0.1",
     "coffeekraken-sugar": "^1.0.5",
-    "gsap": "^2.0.2",
-    "javascript-detect-element-resize": "^0.5.3"
+    "gsap": "^2.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
