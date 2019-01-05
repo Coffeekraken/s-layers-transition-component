@@ -2,7 +2,6 @@ import SWebComponent from 'coffeekraken-sugar/js/core/SWebComponent'
 import { TweenMax, TimelineMax, Expo } from 'gsap'
 import dispatchEvent from 'coffeekraken-sugar/js/dom/dispatchEvent'
 import debounce from 'coffeekraken-sugar/js/utils/functions/debounce'
-import 'javascript-detect-element-resize'
 
 /**
  * Create a nice layered transition for your webapp with fully customizable look and feel.
@@ -74,6 +73,7 @@ export default class SLayersTransitionComponent extends SWebComponent {
       ${componentNameDash} {
         display: block;
         pointer-events: none;
+        transition: width 0.01s linear 0s, height 0.01s linear 0s;
       }
       ${componentNameDash}.active {
         pointer-events: all;
@@ -105,8 +105,8 @@ export default class SLayersTransitionComponent extends SWebComponent {
       this._addLayer(layer.color, layer.side)
     })
 
-    // detect for resize
-    window.addResizeListener(this, debounce(() => {
+    // listen for resize through transitionend event
+    this.addEventListener('transitionend', debounce((e) => {
       // set points
       this._setPointPositionAndCanvasSize()
     }, 100))

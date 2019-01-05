@@ -22,8 +22,6 @@ var _debounce = require('coffeekraken-sugar/js/utils/functions/debounce');
 
 var _debounce2 = _interopRequireDefault(_debounce);
 
-require('javascript-detect-element-resize');
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -79,8 +77,8 @@ var SLayersTransitionComponent = function (_SWebComponent) {
         _this2._addLayer(layer.color, layer.side);
       });
 
-      // detect for resize
-      window.addResizeListener(this, (0, _debounce2.default)(function () {
+      // listen for resize through transitionend event
+      this.addEventListener('transitionend', (0, _debounce2.default)(function (e) {
         // set points
         _this2._setPointPositionAndCanvasSize();
       }, 100));
@@ -323,7 +321,7 @@ var SLayersTransitionComponent = function (_SWebComponent) {
      * @protected
      */
     value: function defaultCss(componentName, componentNameDash) {
-      return '\n      ' + componentNameDash + ' {\n        display: block;\n        pointer-events: none;\n      }\n      ' + componentNameDash + '.active {\n        pointer-events: all;\n      }\n    ';
+      return '\n      ' + componentNameDash + ' {\n        display: block;\n        pointer-events: none;\n        transition: width 0.01s linear 0s, height 0.01s linear 0s;\n      }\n      ' + componentNameDash + '.active {\n        pointer-events: all;\n      }\n    ';
     }
   }, {
     key: 'defaultProps',
