@@ -309,7 +309,7 @@ var SLayersTransitionComponent = function (_SWebComponent) {
               tl.insert(new _gsap.TweenMax(layer.points[3], d, { y: 0, ease: _gsap.Expo.easeInOut }), _this6.props.delay * (_this6._layers.length - 1) - _this6.props.delay * i);
             }
           });
-        });
+        }, 10);
       });
     }
   }], [{
