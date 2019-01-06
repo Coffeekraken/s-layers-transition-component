@@ -1,6 +1,6 @@
 {
   "name": "coffeekraken-s-layers-transition-component",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Create a nice layered transition for your webapp with fully customizable look and feel",
   "main": "dist/index.js",
   "homepage": "http://coffeekraken.io",
@@ -72,32 +72,32 @@
   },
   "dependencies": {
     "coffeekraken-s-button-component": "^1.0.1",
-    "coffeekraken-sugar": "^1.0.5",
+    "coffeekraken-sugar": "^1.0.36",
     "gsap": "^2.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
-    "babel-jest": "^23.0.1",
-    "babel-loader": "^7.1.4",
+    "babel-jest": "^23.6.0",
+    "babel-loader": "^7.1.5",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-export-default": "^7.0.0-alpha.20",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-polyfill": "^6.23.0",
     "babel-preset-env": "^1.7.0",
-    "coffeekraken-code-playground": "^1.0.0",
+    "coffeekraken-code-playground": "^1.0.14",
     "coffeekraken-docblock-to-markdown": "^1.0.0",
     "coffeekraken-s-typography-component": "^1.0.1",
     "coffeekraken-scripts-stack": "^1.0.1",
     "git-changelog": "^1.1.2",
     "http-server": "^0.11.1",
     "jest": "^23.3.0",
-    "node-sass": "^4.0.0",
+    "node-sass": "^4.11.0",
     "pre-commit": "^1.2.2",
     "standard": "^11.0.1",
     "stylelint": "^9.3.0",
     "stylelint-config-standard": "^18.2.0",
-    "webpack": "^4.0.0",
+    "webpack": "^4.28.3",
     "webpack-cli": "^3.0.8"
   }
 }

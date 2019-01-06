@@ -300,7 +300,7 @@ export default class SLayersTransitionComponent extends SWebComponent {
             tl.insert(new TweenMax(layer.points[3], d, { y: 0, ease: Expo.easeInOut }), this.props.delay * (this._layers.length - 1) - this.props.delay * i)
           }
         })
-      })
+      }, 10)
     })
   }
 }
